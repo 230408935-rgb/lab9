@@ -51,3 +51,12 @@ export function validateBook(input) {
   return { value: { title, author, year: input.year, genre: input.genre, read, rating } };
 }
 
+export function parseId(text) {
+  if (!/^[1-9]\d*$/.test(text)) return null;
+  const id = Number(text);
+  return Number.isSafeInteger(id) ? id : null;
+}
+
+const LIST_PARAMS = ['genre', 'read', 'q', 'sort', 'order', 'limit', 'page'];
+const SORT_FIELDS = ['title', 'author', 'year', 'rating'];
+
