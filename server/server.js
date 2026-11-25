@@ -143,3 +143,4 @@ app.get('/api/crash', async () => {
   throw new Error('Deliberate crash for testing');
 });
 
+app.use('/api', (req, res) => sendError(res, 404, 'Not found'));
