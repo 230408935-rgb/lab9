@@ -144,3 +144,11 @@ app.get('/api/crash', async () => {
 });
 
 app.use('/api', (req, res) => sendError(res, 404, 'Not found'));
+
+
+app.use((err, req, res, next) => {
+  if (err.type === 'entity.parse.failed') {
+    return sendError(res, 400, 'Malformed JSON in request body');
+  }
+  next(err);
+});
