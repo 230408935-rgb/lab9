@@ -39,3 +39,17 @@ export async function create(data) {
   return book;
 }
 
+export async function replace(id, data) {
+  await slow();
+  if (!books.some((b) => b.id === id)) return null;
+  const updated = { ...data, id };
+  books = books.map((b) => (b.id === id ? updated : b));
+  return updated;
+}
+
+export async function remove(id) {
+  await slow();
+  if (!books.some((b) => b.id === id)) return false;
+  books = books.filter((b) => b.id !== id);
+  return true;
+}
