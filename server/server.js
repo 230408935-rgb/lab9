@@ -34,3 +34,66 @@ function compareBooks(sort, order) {
     return result === 0 ? a.id - b.id : result * direction;
   };
 }
+
+app.get('/api/books', async (req, res) => {
+  const parsed = parseListQuery(req.query);
+  if (parsed.error) return sendError(res, 400, parsed.error);
+  const { genre, read, q, sort, order, limit, page } = parsed.value;
+
+  const all = await store.getAll();
+  const filtered = all.filter(
+    (b) =>
+      (genre === null || b.genre === genre) &&
+      (read === null || b.read === read) &&
+      (q === '' || b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)),
+  );
+  const sorted = [...filtered].sort(compareBooks(sort, order)); // sort a copy
+  const start = (page - 1) * limit;
+  res.json(sorted.slice(start, start + limit));
+});
+
+app.get('/api/books/:id', async (req, res) => {
+  const id = getId(req, res);
+  if (id === null) return;
+  const book = await store.getById(id);
+  if (!book) return sendError(res, 404, `Book ${id} not found`);
+  res.json(book);
+});
+
+app.post('/api/books', async (req, res) => {
+  if (!isPlainObject(req.body)) return sendError(res, 400, 'Request body must be a JSON object');
+  const result = validateBook(pickFields(req.body));
+  if (result.errors) return sendError(res, 400, result.errors.join('; '));
+
+  if (await store.findDuplicate(result.value)) {
+    return sendError(res, 409, 'A book with this title and author already exists');
+  }
+  const book = await store.create(result.value);
+  res.status(201).location(`/api/books/${book.id}`).json(book);
+});
+
+app.put('/api/books/:id', async (req, res) => {
+  const id = getId(req, res);
+  if (id === null) return;
+  if (!isPlainObject(req.body)) return sendError(res, 400, 'Request body must be a JSON object');
+  const result = validateBook(pickFields(req.body));
+  if (result.errors) return sendError(res, 400, result.errors.join('; '));
+
+  if (!(await store.getById(id))) return sendError(res, 404, `Book ${id} not found`);
+  if (await store.findDuplicate(result.value, id)) {
+    return sendError(res, 409, 'A book with this title and author already exists');
+  }
+  const updated = await store.replace(id, result.value);
+  if (!updated) return sendError(res, 404, `Book ${id} not found`);
+  res.json(updated);
+});
+
+app.patch('/api/books/:id', async (req, res) => {
+  const id = getId(req, res);
+  if (id === null) return;
+  if (!isPlainObject(req.body)) return sendError(res, 400, 'Request body must be a JSON object');
+
+  const existing = await store.getById(id);
+  if (!existing) return sendError(res, 404, `Book ${id} not found`);
+
+  
