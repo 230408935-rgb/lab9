@@ -136,3 +136,10 @@ app.get('/api/stats', async (req, res) => {
     byGenre,
   });
 });
+
+
+app.get('/api/crash', async () => {
+  await store.getAll();
+  throw new Error('Deliberate crash for testing');
+});
+
