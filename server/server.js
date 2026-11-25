@@ -10,3 +10,5 @@ const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 
 app.use(cors({ origin: CLIENT_ORIGIN, exposedHeaders: ['Location'] }));
 app.use(express.json());
+
+const sendError = (res, status, message) => res.status(status).json({ error: message });
