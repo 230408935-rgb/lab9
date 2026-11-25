@@ -36,3 +36,13 @@ export default function App() {
       });
     return () => controller.abort();
   }, [filters, reloadKey]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    getStats(controller.signal)
+      .then(setStats)
+      .catch((err) => {
+        if (err.name !== 'AbortError') setLoadError(err.message);
+      });
+    return () => controller.abort();
+  }, [reloadKey]);
