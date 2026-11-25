@@ -152,3 +152,13 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
+
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  sendError(res, 500, 'Something went wrong');
+});
+
+app.listen(PORT, () => {
+  console.log(`API listening on http://localhost:${PORT} (allowed origin: ${CLIENT_ORIGIN})`);
+});
