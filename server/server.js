@@ -96,4 +96,43 @@ app.patch('/api/books/:id', async (req, res) => {
   const existing = await store.getById(id);
   if (!existing) return sendError(res, 404, `Book ${id} not found`);
 
-  
+
+   const { id: _existingId, ...current } = existing;
+  const merged = { ...current, ...pickFields(req.body) };
+  const result = validateBook(merged);
+  if (result.errors) return sendError(res, 400, result.errors.join('; '));
+
+  if (await store.findDuplicate(result.value, id)) {
+    return sendError(res, 409, 'A book with this title and author already exists');
+  }
+  const updated = await store.replace(id, result.value);
+  if (!updated) return sendError(res, 404, `Book ${id} not found`);
+  res.json(updated);
+});
+
+app.delete('/api/books/:id', async (req, res) => {
+  const id = getId(req, res);
+  if (id === null) return;
+  const removed = await store.remove(id);
+  if (!removed) return sendError(res, 404, `Book ${id} not found`);
+  res.status(204).end();
+});
+
+app.get('/api/stats', async (req, res) => {
+  const books = await store.getAll();
+  const rated = books.filter((b) => b.rating !== null);
+  const readCount = books.filter((b) => b.read).length;
+  const byGenre = {};
+  for (const b of books) byGenre[b.genre] = (byGenre[b.genre] ?? 0) + 1;
+
+  res.json({
+    total: books.length,
+    read: readCount,
+    unread: books.length - readCount,
+    averageRating:
+      rated.length === 0
+        ? null
+        : Math.round((rated.reduce((sum, b) => sum + b.rating, 0) / rated.length) * 100) / 100,
+    byGenre,
+  });
+});
